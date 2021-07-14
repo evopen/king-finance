@@ -1,6 +1,9 @@
 #[macro_use]
 extern crate rocket;
 
+use binance::account::Account;
+use binance::api::Binance;
+use binance::market::Market;
 use rocket::routes;
 
 async fn get_string(req: String) -> String {
@@ -20,6 +23,21 @@ async fn get_sina_current_price(raw: String) -> Option<String> {
     } else {
         Some(arr[3].into())
     }
+}
+
+#[get("/mytrades/binance/me/<ticker>")]
+async fn binance_trades(ticker: String) -> String {
+    let result = std::thread::spawn(|| {
+        let api_key = Some(std::env::var("BINANCE_API_KEY").unwrap());
+        let secret_key = Some(std::env::var("BINANCE_SECRET_KEY").unwrap());
+        let account: Account = Binance::new(api_key, secret_key);
+        let history = account.trade_history(ticker).unwrap();
+        history
+    })
+    .join()
+    .unwrap();
+
+    serde_json::to_string(&result).unwrap()
 }
 
 #[get("/price/<ticker>")]
@@ -55,5 +73,6 @@ async fn index() -> &'static str {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, get_ticker_price])
+    dotenv::dotenv().ok();
+    rocket::build().mount("/", routes![index, get_ticker_price, binance_trades])
 }

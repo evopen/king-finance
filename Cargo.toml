@@ -13,3 +13,5 @@ reqwest = "0.11"
 rocket = { version = "0.5.0-rc.1", features = ["tls"] }
 binance = "0.16.2"
 dotenv = "0.15.0"
+chrono = "0.4"
+

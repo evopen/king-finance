@@ -67,9 +67,9 @@ async fn binance_trades_all() -> String {
                     .unwrap()
                     .into_iter()
                     .map(|t| Trade {
-                        symbol: format!("F:{}", symbol),
+                        symbol: format!("B:{}", symbol),
                         price: t.price,
-                        qty: t.qty,
+                        qty: if t.is_buyer { t.qty } else { -t.qty },
                         date: chrono::NaiveDateTime::from_timestamp((t.time / 1000) as i64, 0)
                             .format("%m/%d/%Y")
                             .to_string(),

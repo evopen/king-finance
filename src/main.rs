@@ -3,6 +3,7 @@ extern crate rocket;
 
 use binance::account::Account;
 use binance::api::Binance;
+use binance::market::Market;
 use rocket::routes;
 
 async fn get_string(req: String) -> String {
@@ -66,7 +67,7 @@ async fn binance_trades_all() -> String {
                     .unwrap()
                     .into_iter()
                     .map(|t| Trade {
-                        symbol: symbol.into(),
+                        symbol: format!("F:{}", symbol),
                         price: t.price,
                         qty: t.qty,
                         date: chrono::NaiveDateTime::from_timestamp((t.time / 1000) as i64, 0)
@@ -89,9 +90,9 @@ async fn binance_trades_all() -> String {
     serde_json::to_string(&result).unwrap()
 }
 
-#[get("/price/<ticker>")]
-async fn get_ticker_price(ticker: String) -> String {
-    if let Some((exchange, ticker)) = ticker.split_once(':') {
+#[get("/price/<symbol>")]
+async fn get_ticker_price(symbol: String) -> String {
+    if let Some((exchange, ticker)) = symbol.split_once(':') {
         match exchange {
             "SHSE" => get_sina_current_price(
                 get_string(format!("http://hq.sinajs.cn/list=sh{}", ticker)).await,
@@ -108,6 +109,17 @@ async fn get_ticker_price(ticker: String) -> String {
             )
             .await
             .unwrap_or("error".into()),
+            "B" => {
+                let t1 = ticker.to_string();
+                let price = std::thread::spawn(move || {
+                    let market: Market = Binance::new(None, None);
+                    let price = market.get_price(t1).unwrap();
+                    price.price
+                })
+                .join()
+                .unwrap();
+                price.to_string()
+            }
             _ => "unknown stock exchange".into(),
         }
     } else {

@@ -129,7 +129,7 @@ async fn get_ticker_price(symbol: String) -> String {
 
 #[get("/")]
 async fn index() -> &'static str {
-    "Hello, world!"
+    "Hastalavista"
 }
 
 #[launch]
